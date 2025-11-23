@@ -2,6 +2,9 @@ from __future__ import annotations
 import pandas as pd
 from typing import Tuple
 
+from src.Online_Retail_II.constants import COL_INVOICE_NO
+
+
 def change_basic_features(df) -> pd.DataFrame:
     """
     Zmiany na wierszach:
@@ -35,7 +38,7 @@ def change_basic_features(df) -> pd.DataFrame:
 
 def build_invoice_level_features(df) -> pd.DataFrame:
     """
-    agregowanie do (InvoiceNo):
+    agregowanie do (Invoice):
     - InvoiceTotal - suma TotalPrice
     - NumItems - suma Quantity
     - NumLines - liczba unikalnych StockCode
@@ -60,7 +63,7 @@ def build_invoice_level_features(df) -> pd.DataFrame:
         agg_dict["Customer ID"] = (customer_col, "first")
 
     invoice_df = (
-        df.groupby("InvoiceNo")
+        df.groupby(COL_INVOICE_NO)
         .agg(**agg_dict)
         .reset_index()
     )
@@ -84,7 +87,7 @@ def prepare_ml_dataset(
     """
     Finalny dataset pod model ML (regresja InvoiceTotal na poziomie faktury).
     - wywołanie działania na wierszach - dodawanie uzupelnianie usuwanie
-    - agreguje do poziomu InvoiceNo
+    - agreguje do poziomu Invoice
     - usuwanie outlierów
     """
     invoice_df = build_invoice_level_features(df)
