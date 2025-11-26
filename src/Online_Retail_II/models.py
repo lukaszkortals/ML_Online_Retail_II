@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import math
+
 import numpy as np
 import pandas as pd
+import optuna
 
 from typing import Tuple, Dict
 
@@ -17,6 +20,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
+from src.Online_Retail_II.constants import COL_INVOICE_TOTAL, COL_INVOICE_NO
+
 # Opcjonalnie XGBoost
 try:
     from xgboost import XGBRegressor
@@ -31,7 +36,7 @@ except ImportError:
 
 def _split_features_target(
     df: pd.DataFrame,
-    target_col: str = "InvoiceTotal",
+    target_col: str = COL_INVOICE_TOTAL,
     test_size: float = 0.2,
     random_state: int = 42,
 ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
@@ -39,8 +44,8 @@ def _split_features_target(
     df = df.copy()
 
     # Identyfikator faktury nie jest cechą ML
-    if "InvoiceNo" in df.columns:
-        df = df.drop(columns=["InvoiceNo"])
+    if COL_INVOICE_NO in df.columns:
+        df = df.drop(columns=[COL_INVOICE_NO])
 
     X = df.drop(columns=[target_col])
     y = df[target_col]
@@ -74,7 +79,7 @@ def _build_preprocessor(X: pd.DataFrame) -> ColumnTransformer:
 
 def compute_metrics(y_true, y_pred) -> Dict[str, float]:
     mae = mean_absolute_error(y_true, y_pred)
-    rmse = mean_squared_error(y_true, y_pred, squared=False)
+    rmse = math.sqrt(mean_squared_error(y_true, y_pred))
     r2 = r2_score(y_true, y_pred)
     mape = np.mean(np.abs((y_true - y_pred) / y_true)) * 100
 
@@ -151,7 +156,6 @@ def random_forest_baseline(df: pd.DataFrame) -> Tuple[Pipeline, Dict[str, float]
 
 def random_forest_optuna(df: pd.DataFrame, n_trials: int = 30):
     """Optymalizacja hiperparametrów RF przy użyciu Optuna."""
-    import optuna
 
     X_train, X_test, y_train, y_test = _split_features_target(df)
 
@@ -182,7 +186,7 @@ def random_forest_optuna(df: pd.DataFrame, n_trials: int = 30):
         pipe.fit(X_train, y_train)
         pred = pipe.predict(X_test)
 
-        return mean_squared_error(y_test, pred, squared=False)
+        return math.sqrt(mean_squared_error(y_test, pred))
 
     study = optuna.create_study(direction="minimize")
     study.optimize(objective, n_trials=n_trials)

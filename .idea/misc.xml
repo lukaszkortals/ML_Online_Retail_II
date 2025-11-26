@@ -3,5 +3,5 @@
   <component name="Black">
     <option name="sdkName" value="pgai_ml2" />
   </component>
-  <component name="ProjectRootManager" version="2" project-jdk-name="pgai_ml2" project-jdk-type="Python SDK" />
+  <component name="ProjectRootManager" version="2" project-jdk-name="py3139" project-jdk-type="Python SDK" />
 </project>
