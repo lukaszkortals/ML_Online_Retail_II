@@ -22,18 +22,9 @@ from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 from src.Online_Retail_II.constants import COL_INVOICE_TOTAL, COL_INVOICE_NO
 
-# Opcjonalnie XGBoost
-try:
-    from xgboost import XGBRegressor
-    HAS_XGB = True
-except ImportError:
-    HAS_XGB = False
+from xgboost import XGBRegressor
 
-
-# ================
-#  HELPERS
-# ================
-
+# przygotowanie modeli
 def _split_features_target(
     df: pd.DataFrame,
     target_col: str = COL_INVOICE_TOTAL,
@@ -54,7 +45,6 @@ def _split_features_target(
         X, y, test_size=test_size, random_state=random_state
     )
 
-
 def _build_preprocessor(X: pd.DataFrame) -> ColumnTransformer:
     """Buduje preprocessing:
     - Standaryzacja cech numerycznych
@@ -72,11 +62,7 @@ def _build_preprocessor(X: pd.DataFrame) -> ColumnTransformer:
 
     return pre
 
-
-# ================
-#  EVALUATION (METRYKI)
-# ================
-
+# metryki
 def compute_metrics(y_true, y_pred) -> Dict[str, float]:
     mae = mean_absolute_error(y_true, y_pred)
     rmse = math.sqrt(mean_squared_error(y_true, y_pred))
@@ -90,20 +76,11 @@ def compute_metrics(y_true, y_pred) -> Dict[str, float]:
         "MAPE": float(mape),
     }
 
-
-# ================
-#  MODEL 0 – Benchmark model (średnia)
-# ================
-
+# modele
 def benchmark_model(y_train, y_test) -> Dict[str, float]:
     """Model benchmarkowy – przewiduje średnią wartość faktury."""
     y_pred = np.repeat(y_train.mean(), len(y_test))
     return compute_metrics(y_test, y_pred)
-
-
-# ================
-#  MODEL 1 – Linear Regression
-# ================
 
 def linear_regression_model(df: pd.DataFrame) -> Tuple[Pipeline, Dict[str, float]]:
     """Najprostszy model regresji liniowej."""
@@ -121,11 +98,6 @@ def linear_regression_model(df: pd.DataFrame) -> Tuple[Pipeline, Dict[str, float
     pred = pipe.predict(X_test)
 
     return pipe, compute_metrics(y_test, pred)
-
-
-# ================
-#  MODEL 2 – RandomForest baseline
-# ================
 
 def random_forest_baseline(df: pd.DataFrame) -> Tuple[Pipeline, Dict[str, float]]:
     """Podstawowy RandomForest – baseline ML-owy."""
@@ -149,10 +121,6 @@ def random_forest_baseline(df: pd.DataFrame) -> Tuple[Pipeline, Dict[str, float]
 
     return pipe, compute_metrics(y_test, pred)
 
-
-# ================
-#  MODEL 3 – RandomForest + OPTUNA (MODEL TUNED)
-# ================
 
 def random_forest_optuna(df: pd.DataFrame, n_trials: int = 30):
     """Optymalizacja hiperparametrów RF przy użyciu Optuna."""
@@ -212,13 +180,7 @@ def random_forest_optuna(df: pd.DataFrame, n_trials: int = 30):
     return study, best_pipe, compute_metrics(y_test, pred)
 
 
-# ================
-#  MODEL 4 – XGBoost baseline (opcjonalnie)
-# ================
-
 def xgboost_baseline(df: pd.DataFrame):
-    if not HAS_XGB:
-        raise ImportError("Zainstaluj xgboost: pip install xgboost")
 
     X_train, X_test, y_train, y_test = _split_features_target(df)
 
