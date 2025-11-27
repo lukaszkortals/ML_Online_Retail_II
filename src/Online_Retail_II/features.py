@@ -68,7 +68,7 @@ def build_invoice_level_features(df) -> pd.DataFrame:
         .reset_index()
     )
 
-    # Cechy czasowe już na poziomie faktury
+    # cechy czasowe faktury
     invoice_df["InvoiceYear"] = invoice_df["InvoiceDate"].dt.year
     invoice_df["InvoiceMonth"] = invoice_df["InvoiceDate"].dt.month
     invoice_df["InvoiceDay"] = invoice_df["InvoiceDate"].dt.day

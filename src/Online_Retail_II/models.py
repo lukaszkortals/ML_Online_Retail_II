@@ -121,7 +121,6 @@ def random_forest_baseline(df: pd.DataFrame) -> Tuple[Pipeline, Dict[str, float]
 
     return pipe, compute_metrics(y_test, pred)
 
-
 def random_forest_optuna(df: pd.DataFrame, n_trials: int = 30):
     """Optymalizacja hiperparametrów RF przy użyciu Optuna."""
 
