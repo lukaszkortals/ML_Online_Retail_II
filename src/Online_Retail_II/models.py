@@ -34,7 +34,6 @@ def _split_features_target(
 
     df = df.copy()
 
-    # Identyfikator faktury nie jest cechą ML
     if COL_INVOICE_NO in df.columns:
         df = df.drop(columns=[COL_INVOICE_NO])
 
@@ -46,10 +45,7 @@ def _split_features_target(
     )
 
 def _build_preprocessor(X: pd.DataFrame) -> ColumnTransformer:
-    """Buduje preprocessing:
-    - Standaryzacja cech numerycznych
-    - OneHotEncoding dla cech kategorialnych
-    """
+
     numeric_feats = X.select_dtypes(include=["int64", "float64", "bool"]).columns
     categorical_feats = X.select_dtypes(include=["object", "category"]).columns
 
@@ -78,12 +74,12 @@ def compute_metrics(y_true, y_pred) -> Dict[str, float]:
 
 # modele
 def benchmark_model(y_train, y_test) -> Dict[str, float]:
-    """Model benchmarkowy – przewiduje średnią wartość faktury."""
+    """ benchmark – wrzuca średnią """
     y_pred = np.repeat(y_train.mean(), len(y_test))
     return compute_metrics(y_test, y_pred)
 
 def linear_regression_model(df: pd.DataFrame) -> Tuple[Pipeline, Dict[str, float]]:
-    """Najprostszy model regresji liniowej."""
+    """ regresja liniowa """
     X_train, X_test, y_train, y_test = _split_features_target(df)
 
     pre = _build_preprocessor(X_train)
@@ -100,7 +96,7 @@ def linear_regression_model(df: pd.DataFrame) -> Tuple[Pipeline, Dict[str, float
     return pipe, compute_metrics(y_test, pred)
 
 def random_forest_baseline(df: pd.DataFrame) -> Tuple[Pipeline, Dict[str, float]]:
-    """Podstawowy RandomForest – baseline ML-owy."""
+    """ RandomForest – baseline."""
     X_train, X_test, y_train, y_test = _split_features_target(df)
 
     pre = _build_preprocessor(X_train)

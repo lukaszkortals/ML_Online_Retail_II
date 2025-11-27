@@ -1,13 +1,14 @@
 from __future__ import annotations
 import pandas as pd
-from typing import Tuple
 
-from src.Online_Retail_II.constants import COL_INVOICE_NO
+from src.Online_Retail_II.constants import COL_INVOICE_NO, COL_CUSTOMER_ID, COL_QUANTITY, COL_UNIT_PRICE, \
+    COL_INVOICE_DATE, COL_NUM_ITEMS, COL_TOTAL_PRICE, COL_COUNTRY, COL_YEAR, COL_MONTH, COL_DAY, COL_HOUR, COL_WEEKDAY, \
+    COL_IS_WEEKEND, COL_INVOICE_TOTAL, COL_NUM_LINES, COL_AVG_UNIT_PRICE, COL_STOCK_CODE
 
 
 def change_basic_features(df) -> pd.DataFrame:
     """
-    Zmiany na wierszach:
+    na wierszach:
     - usuwanie korekt i wypełnianie pustych customer Id zerami - sprzedaż niezalogowanego klietna
     - konwersja InvoiceDate na datetime
     - kolumna TotalPrice (Quantity * Price)
@@ -16,23 +17,23 @@ def change_basic_features(df) -> pd.DataFrame:
     """
     df = df.copy()
 
-    df = df[(df["Quantity"] > 0) & (df["Price"] > 0)]
+    df = df[(df[COL_QUANTITY] > 0) & (df[COL_UNIT_PRICE] > 0)]
 
-    df["Customer ID"] = df["Customer ID"].fillna(0).astype(int)
+    df[COL_CUSTOMER_ID] = df[COL_CUSTOMER_ID].fillna(0).astype(int)
 
-    df["InvoiceDate"] = pd.to_datetime(df["InvoiceDate"], errors="coerce")
+    df[COL_INVOICE_DATE] = pd.to_datetime(df[COL_INVOICE_DATE], errors="coerce")
 
-    df["TotalPrice"] = df["Quantity"] * df["Price"]
+    df[COL_TOTAL_PRICE] = df[COL_QUANTITY] * df[COL_UNIT_PRICE]
 
-    df = df[~df["Invoice"].astype(str).str.startswith("C")]
-    df = df[df["Country"] == "United Kingdom"]
+    df = df[~df[COL_INVOICE_NO].astype(str).str.startswith("C")]
+    df = df[df[COL_COUNTRY] == "United Kingdom"]
 
-    df["InvoiceYear"] = df["InvoiceDate"].dt.year
-    df["InvoiceMonth"] = df["InvoiceDate"].dt.month
-    df["InvoiceDay"] = df["InvoiceDate"].dt.day
-    df["InvoiceHour"] = df["InvoiceDate"].dt.hour
-    df["InvoiceWeekday"] = df["InvoiceDate"].dt.weekday  #0-6
-    df["IsWeekend"] = df["InvoiceWeekday"].isin([5, 6])
+    df[COL_YEAR] = df[COL_INVOICE_DATE].dt.year
+    df[COL_MONTH] = df[COL_INVOICE_DATE].dt.month
+    df[COL_DAY] = df[COL_INVOICE_DATE].dt.day
+    df[COL_HOUR] = df[COL_INVOICE_DATE].dt.hour
+    df[COL_WEEKDAY] = df[COL_INVOICE_DATE].dt.weekday  #0-6
+    df[COL_IS_WEEKEND] = df[COL_WEEKDAY].isin([5, 6])
 
     return df
 
@@ -48,19 +49,19 @@ def build_invoice_level_features(df) -> pd.DataFrame:
     """
     df = change_basic_features(df)
 
-    customer_col = "Customer ID"
+    customer_col = COL_CUSTOMER_ID
 
     agg_dict = {
-        "InvoiceTotal": ("TotalPrice", "sum"),
-        "NumItems": ("Quantity", "sum"),
-        "NumLines": ("StockCode", "nunique"),
-        "AvgUnitPrice": ("Price", "mean"),
-        "InvoiceDate": ("InvoiceDate", "first"),
-        "Country": ("Country", "first"),
+        COL_INVOICE_TOTAL: (COL_TOTAL_PRICE, "sum"),
+        COL_NUM_ITEMS: (COL_QUANTITY, "sum"),
+        COL_NUM_LINES: (COL_STOCK_CODE, "nunique"),
+        COL_AVG_UNIT_PRICE: (COL_UNIT_PRICE, "mean"),
+        COL_INVOICE_DATE: (COL_INVOICE_DATE, "first"),
+        COL_COUNTRY: (COL_COUNTRY, "first"),
     }
 
     if customer_col is not None:
-        agg_dict["Customer ID"] = (customer_col, "first")
+        agg_dict[COL_CUSTOMER_ID] = (customer_col, "first")
 
     invoice_df = (
         df.groupby(COL_INVOICE_NO)
@@ -69,12 +70,12 @@ def build_invoice_level_features(df) -> pd.DataFrame:
     )
 
     # cechy czasowe faktury
-    invoice_df["InvoiceYear"] = invoice_df["InvoiceDate"].dt.year
-    invoice_df["InvoiceMonth"] = invoice_df["InvoiceDate"].dt.month
-    invoice_df["InvoiceDay"] = invoice_df["InvoiceDate"].dt.day
-    invoice_df["InvoiceHour"] = invoice_df["InvoiceDate"].dt.hour
-    invoice_df["InvoiceWeekday"] = invoice_df["InvoiceDate"].dt.weekday
-    invoice_df["IsWeekend"] = invoice_df["InvoiceWeekday"].isin([5, 6])
+    invoice_df[COL_YEAR] = invoice_df[COL_INVOICE_DATE].dt.year
+    invoice_df[COL_MONTH] = invoice_df[COL_INVOICE_DATE].dt.month
+    invoice_df[COL_DAY] = invoice_df[COL_INVOICE_DATE].dt.day
+    invoice_df[COL_HOUR] = invoice_df[COL_INVOICE_DATE].dt.hour
+    invoice_df[COL_WEEKDAY] = invoice_df[COL_INVOICE_DATE].dt.weekday
+    invoice_df[COL_IS_WEEKEND] = invoice_df[COL_WEEKDAY].isin([5, 6])
 
     return invoice_df
 
@@ -85,7 +86,7 @@ def prepare_ml_dataset(
     outlier_q_high: float = 0.99,
 ) -> pd.DataFrame:
     """
-    Finalny dataset pod model ML (regresja InvoiceTotal na poziomie faktury).
+    główny
     - wywołanie działania na wierszach - dodawanie uzupelnianie usuwanie
     - agreguje do poziomu Invoice
     - usuwanie outlierów
@@ -94,11 +95,11 @@ def prepare_ml_dataset(
 
     # outliery
     if remove_outliers:
-        q_low, q_high = invoice_df["InvoiceTotal"].quantile(
+        q_low, q_high = invoice_df[COL_INVOICE_TOTAL].quantile(
             [outlier_q_low, outlier_q_high]
         )
         invoice_df = invoice_df[
-            invoice_df["InvoiceTotal"].between(q_low, q_high)
+            invoice_df[COL_INVOICE_TOTAL].between(q_low, q_high)
         ]
 
     return invoice_df
