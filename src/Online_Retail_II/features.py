@@ -57,7 +57,7 @@ def build_invoice_level_features(df) -> pd.DataFrame:
         COL_NUM_LINES: (COL_STOCK_CODE, "nunique"),
         COL_AVG_UNIT_PRICE: (COL_UNIT_PRICE, "mean"),
         COL_INVOICE_DATE: (COL_INVOICE_DATE, "first"),
-        COL_COUNTRY: (COL_COUNTRY, "first"),
+        #COL_COUNTRY: (COL_COUNTRY, "first"),
     }
 
     if customer_col is not None:
@@ -70,20 +70,20 @@ def build_invoice_level_features(df) -> pd.DataFrame:
     )
 
     # cechy czasowe faktury
-    invoice_df[COL_YEAR] = invoice_df[COL_INVOICE_DATE].dt.year
-    invoice_df[COL_MONTH] = invoice_df[COL_INVOICE_DATE].dt.month
-    invoice_df[COL_DAY] = invoice_df[COL_INVOICE_DATE].dt.day
-    invoice_df[COL_HOUR] = invoice_df[COL_INVOICE_DATE].dt.hour
-    invoice_df[COL_WEEKDAY] = invoice_df[COL_INVOICE_DATE].dt.weekday
+    invoice_df[COL_YEAR] = invoice_df[COL_INVOICE_DATE].dt.year.astype(pd.CategoricalDtype(ordered=True))
+    invoice_df[COL_MONTH] = invoice_df[COL_INVOICE_DATE].dt.month.astype(pd.CategoricalDtype(ordered=True))
+    invoice_df[COL_DAY] = invoice_df[COL_INVOICE_DATE].dt.day.astype(pd.CategoricalDtype(ordered=True))
+    invoice_df[COL_HOUR] = invoice_df[COL_INVOICE_DATE].dt.hour.astype(pd.CategoricalDtype(ordered=True))
+    invoice_df[COL_WEEKDAY] = invoice_df[COL_INVOICE_DATE].dt.weekday.astype(pd.CategoricalDtype(ordered=True))
     invoice_df[COL_IS_WEEKEND] = invoice_df[COL_WEEKDAY].isin([5, 6])
 
-    return invoice_df
+    return invoice_df.drop(columns=[COL_INVOICE_NO, COL_INVOICE_DATE, COL_CUSTOMER_ID])
 
 def prepare_ml_dataset(
     df: pd.DataFrame,
     remove_outliers: bool = True,
-    outlier_q_low: float = 0.01,
-    outlier_q_high: float = 0.99,
+    outlier_q_low: float = 0.02,
+    outlier_q_high: float = 0.98,
 ) -> pd.DataFrame:
     """
     główny

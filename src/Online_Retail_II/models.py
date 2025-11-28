@@ -44,17 +44,27 @@ def _split_features_target(
         X, y, test_size=test_size, random_state=random_state
     )
 
-def _build_preprocessor(X: pd.DataFrame) -> ColumnTransformer:
+def _build_preprocessor(X: pd.DataFrame, modelType: str) -> ColumnTransformer:
 
     numeric_feats = X.select_dtypes(include=["int64", "float64", "bool"]).columns
     categorical_feats = X.select_dtypes(include=["object", "category"]).columns
 
-    pre = ColumnTransformer(
-        transformers=[
-            ("num", StandardScaler(), numeric_feats),
-            ("cat", OneHotEncoder(handle_unknown="ignore"), categorical_feats),
-        ]
-    )
+    if modelType == "linear":
+        pre = ColumnTransformer(
+            transformers=[
+                ("num", StandardScaler(), numeric_feats),
+                ("cat", OneHotEncoder(handle_unknown="ignore"), categorical_feats),
+            ]
+        )
+    else:
+        pre = ColumnTransformer(
+            transformers=[],
+            remainder="passthrough"
+        )
+    # else:
+    #     pre = ColumnTransformer(
+    #         transformers=[("num", StandardScaler(), numeric_feats)]
+    #     )
 
     return pre
 
@@ -82,7 +92,7 @@ def linear_regression_model(df: pd.DataFrame) -> Tuple[Pipeline, Dict[str, float
     """ regresja liniowa """
     X_train, X_test, y_train, y_test = _split_features_target(df)
 
-    pre = _build_preprocessor(X_train)
+    pre = _build_preprocessor(X_train, modelType='linear')
     lr = LinearRegression()
 
     pipe = Pipeline([
@@ -99,9 +109,9 @@ def random_forest_baseline(df: pd.DataFrame) -> Tuple[Pipeline, Dict[str, float]
     """ RandomForest – baseline."""
     X_train, X_test, y_train, y_test = _split_features_target(df)
 
-    pre = _build_preprocessor(X_train)
+    pre = _build_preprocessor(X_train, modelType='tree')
     model = RandomForestRegressor(
-        n_estimators=200,
+        # n_estimators=200,
         max_depth=None,
         random_state=42,
         n_jobs=-1,
@@ -123,7 +133,7 @@ def random_forest_optuna(df: pd.DataFrame, n_trials: int = 30):
     X_train, X_test, y_train, y_test = _split_features_target(df)
 
     def objective(trial: optuna.trial.Trial):
-        pre = _build_preprocessor(X_train)
+        pre = _build_preprocessor(X_train, 'tree')
 
         params = {
             "n_estimators": trial.suggest_int("n_estimators", 100, 500),
@@ -156,7 +166,7 @@ def random_forest_optuna(df: pd.DataFrame, n_trials: int = 30):
 
     # final model
     best_params = study.best_params
-    pre = _build_preprocessor(X_train)
+    pre = _build_preprocessor(X_train, 'tree')
 
     final_model = RandomForestRegressor(
         **best_params,
@@ -179,7 +189,7 @@ def xgboost_baseline(df: pd.DataFrame):
 
     X_train, X_test, y_train, y_test = _split_features_target(df)
 
-    pre = _build_preprocessor(X_train)
+    pre = _build_preprocessor(X_train, modelType='tree')
 
     model = XGBRegressor(
         n_estimators=400,
