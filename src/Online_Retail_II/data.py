@@ -14,13 +14,13 @@ def load_df_from_kaggle(max_rows = 1000) -> pd.DataFrame:
 
     xlsx_path = os.path.join(file_path, xlsx_files[0])
 
-    # workbook pod streeming zeby nie wieszalo
+    #workbook pod streeming zeby nie wieszalo
     wb = load_workbook(xlsx_path, read_only=True, data_only=True)
 
     sheet1 = wb["Year 2009-2010"]
     sheet2 = wb["Year 2010-2011"]
 
-    # ładowanie pliku strimingiem bo inaczej mieliło godzine
+    #ładowanie pliku strimingiem bo inaczej mieliło godzine
     def load_head(sheet, n=None):
         rows = []
         for i, row in enumerate(sheet.values):

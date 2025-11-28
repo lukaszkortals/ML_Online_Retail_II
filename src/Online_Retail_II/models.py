@@ -84,7 +84,7 @@ def compute_metrics(y_true, y_pred) -> Dict[str, float]:
 
 # modele
 def benchmark_model(y_train, y_test) -> Dict[str, float]:
-    """ benchmark – wrzuca średnią """
+
     y_pred = np.repeat(y_train.mean(), len(y_test))
     return compute_metrics(y_test, y_pred)
 
@@ -106,7 +106,7 @@ def linear_regression_model(df: pd.DataFrame) -> Tuple[Pipeline, Dict[str, float
     return pipe, compute_metrics(y_test, pred)
 
 def random_forest_baseline(df: pd.DataFrame) -> Tuple[Pipeline, Dict[str, float]]:
-    """ RandomForest – baseline."""
+
     X_train, X_test, y_train, y_test = _split_features_target(df)
 
     pre = _build_preprocessor(X_train, modelType='tree')
@@ -128,7 +128,6 @@ def random_forest_baseline(df: pd.DataFrame) -> Tuple[Pipeline, Dict[str, float]
     return pipe, compute_metrics(y_test, pred)
 
 def random_forest_optuna(df: pd.DataFrame, n_trials: int = 30):
-    """Optymalizacja hiperparametrów RF przy użyciu Optuna."""
 
     X_train, X_test, y_train, y_test = _split_features_target(df)
 
